@@ -29,7 +29,7 @@ public:
 
     friend ostream &operator<<(ostream &text, const Crew &crew);
 
-    virtual void insertText(ostream &text) const
+    void insertText(ostream &text) const
     {
         text << this->personName << " (" << this->personType << ", ID: " << this->personID << ")";
     }
@@ -63,14 +63,60 @@ ostream &operator<<(ostream &text, const Crew &crew)
 class Ship
 {
 protected:
-    int hp, shipID, maxPilot, maxGunner, maxTorpedoHandler, pilotCount, gunnerCount, torpedoHandlerCount;
-    string shipType;
+    int hp, shipID, pilotCount, gunnerCount, torpedoHandlerCount, maxPilotCount, maxGunnerCount, maxTHCount;
     string shipName;
     vector<Crew *> CrewMembers;
+    float lightCannotHitChance, torpedoHitChance;
 
 public:
-    virtual void attack() = 0;
-    virtual void isHit(int damage) = 0;
+    Ship(int hitpoint, int id, string name, int maxp, int maxg, int maxth, float LCHitChance, float THitChance)
+    {
+        hp = hitpoint;
+        shipID = id;
+        shipName = name;
+        pilotCount = 0;
+        gunnerCount = 0;
+        torpedoHandlerCount = 0;
+        maxPilotCount = maxp;
+        maxGunnerCount = maxg;
+        maxTHCount = maxth;
+        lightCannotHitChance = LCHitChance;
+        torpedoHitChance = THitChance;
+    }
+
+    virtual int returnLightCannonDamage() const = 0;
+
+    virtual int returnTorpedoDamage() const = 0;
+
+    void isHit(string attackType, int damage)
+    {
+        int hitChance = (((maxPilotCount - pilotCount) * 0.25 + 1) * (attackType == "Light Cannon" ? lightCannotHitChance : torpedoHitChance)) * 1000;
+        // for example if hit == 490 and hit chance was 550, it hits.
+        // easier to illustrate with graph but essentially
+        // 0 ------  50 ------ 100
+        // P(X <= hit chance) is the probability it will hit
+        bool hit = rand() % 1000 <= hitChance;
+        if (hit)
+        {
+            hp -= damage;
+        }
+    };
+
+    int returnMaxPilot()
+    {
+        return maxPilotCount;
+    }
+
+    int returnMaxGunner()
+    {
+        return maxGunnerCount;
+    }
+
+    int returnMaxTorpedoHandler()
+    {
+        return maxTHCount;
+    }
+
     ~Ship()
     {
         int crewCount = CrewMembers.size();
@@ -83,7 +129,121 @@ public:
     }
 };
 
-// derived classes for Ship here
+class Guerriero : public Ship
+{
+protected:
+    int lightCannonDamage;
+
+public:
+    Guerriero(int shipID, string name) : Ship(123, shipID, name, 1, 1, 0, 0.26, 0.06)
+    {
+        lightCannonDamage = 96;
+    }
+
+    int returnLightCannonDamage() const override
+    {
+        return lightCannonDamage;
+    }
+};
+
+class Medio : public Ship
+{
+protected:
+    int lightCannonDamage;
+
+public:
+    Medio(int shipID, string name) : Ship(214, shipID, name, 1, 2, 0, 0.31, 0.11)
+    {
+        lightCannonDamage = 134;
+    }
+
+    int returnLightCannonDamage() const override
+    {
+        return lightCannonDamage;
+    }
+};
+
+class Corazzata : public Ship
+{
+protected:
+    int lightCannonDamage;
+    int torpedoDamage;
+
+public:
+    Corazzata(int shipID, string name) : Ship(1031, shipID, name, 2, 10, 4, 0.50, 0.25)
+    {
+        lightCannonDamage = 164;
+        torpedoDamage = 293;
+    }
+
+    int returnLightCannonDamage() const override
+    {
+        return lightCannonDamage;
+    }
+
+    int returnTorpedoDamage() const override
+    {
+        return torpedoDamage;
+    }
+};
+
+class Jager : public Ship
+{
+protected:
+    int lightCannonDamage;
+
+public:
+    Jager(int shipID, string name) : Ship(112, shipID, name, 1, 1, 0, 0.24, 0.05)
+    {
+        lightCannonDamage = 101;
+    }
+
+    int returnLightCannonDamage() const override
+    {
+        return lightCannonDamage;
+    }
+};
+
+class Kreuzer : public Ship
+{
+protected:
+    int lightCannonDamage;
+
+public:
+    Kreuzer(int shipID, string name) : Ship(212, shipID, name, 1, 2, 0, 0.29, 0.10)
+    {
+        lightCannonDamage = 132;
+    }
+
+    int returnLightCannonDamage() const override
+    {
+        return lightCannonDamage;
+    }
+};
+
+class Fregatte : public Ship
+{
+protected:
+    int lightCannonDamage;
+    int torpedoDamage;
+
+public:
+    Fregatte(int shipID, string name) : Ship(1143, shipID, name, 2, 11, 5, 0.60, 0.30)
+    {
+        lightCannonDamage = 159;
+        torpedoDamage = 282;
+    }
+
+    int returnLightCannonDamage() const override
+    {
+        return lightCannonDamage;
+    }
+
+    int returnTorpedoDamage() const override
+    {
+        return torpedoDamage;
+    }
+};
 
 vector<Ship *> RogoatuskanShip;
 vector<Ship *> ZapezoidShip;
@@ -91,6 +251,7 @@ vector<Ship *> ZapezoidShip;
 void shipAssignment(const char *crew, const char *ship, const string team)
 {
     queue<Crew *> crewQueue;
+    int pilotIndex, gunnerIndex, torpedoHandlerIndex = 0;
     try
     {
         fstream crewCSV(crew);
@@ -106,6 +267,7 @@ void shipAssignment(const char *crew, const char *ship, const string team)
 // argc is argument count, argv is the argument variables
 int main(const int argc, const char *argv[])
 {
+    srand(time(0));
     // argc also includes calling the process
     if (argc != 5)
     {
