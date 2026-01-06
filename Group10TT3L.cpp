@@ -102,17 +102,21 @@ public:
         }
     };
 
-    int returnMaxPilot()
+    int returnHP() const {
+        return hp;
+    }
+
+    int returnMaxPilot() const
     {
         return maxPilotCount;
     }
 
-    int returnMaxGunner()
+    int returnMaxGunner() const
     {
         return maxGunnerCount;
     }
 
-    int returnMaxTorpedoHandler()
+    int returnMaxTorpedoHandler() const
     {
         return maxTHCount;
     }
