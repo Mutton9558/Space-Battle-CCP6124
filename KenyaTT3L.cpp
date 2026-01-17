@@ -82,7 +82,9 @@ ostream &operator<<(ostream &text, const Crew &crew)
 class Ship
 {
 protected:
-    int hp, shipID, pilotCount, gunnerCount, torpedoHandlerCount, maxPilotCount, maxGunnerCount, maxTHCount;
+    int hp, shipID;
+    map<string, int> crewType;
+    map<string, int> maxCrewType;
     string shipName;
     vector<Crew *> CrewMembers;
     float lightCannotHitChance, torpedoHitChance;
@@ -93,12 +95,9 @@ public:
         hp = hitpoint;
         shipID = id;
         shipName = name;
-        pilotCount = 0;
-        gunnerCount = 0;
-        torpedoHandlerCount = 0;
-        maxPilotCount = maxp;
-        maxGunnerCount = maxg;
-        maxTHCount = maxth;
+        maxCrewType["Pilot"] = maxp;
+        maxCrewType["Gunner"] = maxg;
+        maxCrewType["Torpedo Handler"] = maxth;
         lightCannotHitChance = LCHitChance;
         torpedoHitChance = THitChance;
     }
@@ -109,7 +108,7 @@ public:
 
     void isHit(string attackType, int damage)
     {
-        int hitChance = (((maxPilotCount - pilotCount) * 0.25 + 1) * (attackType == "Light Cannon" ? lightCannotHitChance : torpedoHitChance)) * 1000;
+        int hitChance = (((maxCrewType["Pilot"] - crewType["Pilot"]) * 0.25 + 1) * (attackType == "Light Cannon" ? lightCannotHitChance : torpedoHitChance)) * 1000;
         // for example if hit == 490 and hit chance was 550, it hits.
         // easier to illustrate with graph but essentially
         // 0 ------  50 ------ 100
@@ -121,11 +120,22 @@ public:
         }
     };
 
+    // implement do while to check if crew can be assigned here
+    bool validAssignment(Crew *c)
+    {
+        string type = c->returnType();
+        if (crewType[type] < maxCrewType[type])
+        {
+            return true;
+        }
+        return false;
+    }
+
     void insertCrew(Crew *c)
     {
-        pilotCount += c->pilotContribution();
-        gunnerCount += c->gunnerContribution();
-        torpedoHandlerCount += c->torpedoContribution();
+        crewType["Pilot"] += c->pilotContribution();
+        crewType["Gunner"] += c->gunnerContribution();
+        crewType["Torpedo Handler"] += c->torpedoContribution();
         CrewMembers.push_back(c);
     }
 
@@ -136,17 +146,41 @@ public:
 
     int returnMaxPilot() const
     {
-        return maxPilotCount;
+        try
+        {
+            return maxCrewType.at("Pilot");
+        }
+        catch (std::out_of_range)
+        {
+            cout << "No Pilots" << endl;
+            return -1;
+        }
     }
 
     int returnMaxGunner() const
     {
-        return maxGunnerCount;
+        try
+        {
+            return maxCrewType.at("Gunner");
+        }
+        catch (std::out_of_range)
+        {
+            cout << "No Gunners" << endl;
+            return -1;
+        }
     }
 
     int returnMaxTorpedoHandler() const
     {
-        return maxTHCount;
+        try
+        {
+            return maxCrewType.at("Torpedo Handlers");
+        }
+        catch (std::out_of_range)
+        {
+            cout << "No Torpedo Handlers" << endl;
+            return -1;
+        }
     }
 
     virtual ~Ship()
