@@ -35,28 +35,41 @@ public:
         text << this->personName << " (" << this->personType << ", ID: " << this->personID << ")";
     }
 
+    virtual int pilotContribution() const { return 0; }
+    virtual int gunnerContribution() const { return 0; }
+    virtual int torpedoContribution() const { return 0; }
+
     string returnType() const
     {
         return personType;
     }
+
+    virtual ~Crew() {}
 };
 
 class Pilot : public Crew
 {
 public:
     Pilot(int id, string name) : Crew(id, name, "Pilot") {}
+
+    // for incrementing counter for ship classes later
+    int pilotContribution() const override { return 1; }
 };
 
 class Gunner : public Crew
 {
 public:
     Gunner(int id, string name) : Crew(id, name, "Gunner") {}
+
+    int gunnerContribution() const override { return 1; }
 };
 
 class TorpedoHandler : public Crew
 {
 public:
     TorpedoHandler(int id, string name) : Crew(id, name, "Torpedo Handler") {}
+
+    int torpedoContribution() const override { return 1; }
 };
 
 ostream &operator<<(ostream &text, const Crew &crew)
@@ -92,7 +105,7 @@ public:
 
     virtual int returnLightCannonDamage() const = 0;
 
-    virtual int returnTorpedoDamage() const = 0;
+    virtual int returnTorpedoDamage() const { return 0; };
 
     void isHit(string attackType, int damage)
     {
@@ -108,8 +121,12 @@ public:
         }
     };
 
-    void insertCrew(Crew &c){
-        CrewMembers.push_back(&c);
+    void insertCrew(Crew *c)
+    {
+        pilotCount += c->pilotContribution();
+        gunnerCount += c->gunnerContribution();
+        torpedoHandlerCount += c->torpedoContribution();
+        CrewMembers.push_back(c);
     }
 
     int returnHP() const
