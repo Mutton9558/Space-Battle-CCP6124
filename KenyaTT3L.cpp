@@ -1,4 +1,4 @@
-// Group10 TT3L
+// Kenya TT3L
 // Shawn Huang Qi Yang
 // Imran Firdaus Mohd. Firdaus
 // Soh Zi Xuan
@@ -9,6 +9,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <queue>
+#include <map>
 
 using namespace std;
 
@@ -32,6 +33,11 @@ public:
     void insertText(ostream &text) const
     {
         text << this->personName << " (" << this->personType << ", ID: " << this->personID << ")";
+    }
+
+    string returnType() const
+    {
+        return personType;
     }
 };
 
@@ -102,7 +108,12 @@ public:
         }
     };
 
-    int returnHP() const {
+    void insertCrew(Crew &c){
+        CrewMembers.push_back(&c);
+    }
+
+    int returnHP() const
+    {
         return hp;
     }
 
@@ -121,7 +132,7 @@ public:
         return maxTHCount;
     }
 
-    ~Ship()
+    virtual ~Ship()
     {
         int crewCount = CrewMembers.size();
         for (int i = 0; i < crewCount; i++)
@@ -251,6 +262,9 @@ public:
 
 vector<Ship *> RogoatuskanShip;
 vector<Ship *> ZapezoidShip;
+// can use this to polymorphically assign crews to ships
+// for example, Rogoatuskan[p->returnType() % Rogoatuskan.size()-1]->insertCrew(p);
+map<string, int> personTypeCount;
 
 void shipAssignment(const char *crew, const char *ship, const string team)
 {
