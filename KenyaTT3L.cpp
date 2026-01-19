@@ -10,6 +10,9 @@
 #include <cstdlib>
 #include <queue>
 #include <map>
+#include <sstream>
+#include <ctime>
+#include <string>
 
 using namespace std;
 
@@ -317,6 +320,29 @@ vector<Ship *> ZapezoidShip;
 // for example, Rogoatuskan[p->returnType() % Rogoatuskan.size()-1]->insertCrew(p);
 map<string, int> personTypeCount;
 
+vector<vector<string>> readCSV(const string &filename)
+{
+    vector<vector<string>> data;
+    ifstream file(filename);
+    string line;
+
+    while (getline(file, line))
+    {
+        vector<string> row;
+        stringstream ss(line);
+        string cell;
+
+        while (getline(ss, cell, ','))
+        {
+            row.push_back(cell);
+        }
+
+        data.push_back(row);
+    }
+
+    return data;
+}
+
 void shipAssignment(const char *crew, const char *ship, const string team)
 {
     queue<Crew *> crewQueue;
@@ -325,7 +351,100 @@ void shipAssignment(const char *crew, const char *ship, const string team)
     {
         fstream crewCSV(crew);
         fstream shipCSV(ship);
-        // Read csv function here
+        vector<vector<string>> crewData = readCSV(crew);
+
+        // Skip header if present (assuming first row is header)
+        for (size_t i = 1; i < crewData.size(); ++i)
+        {
+            if (crewData[i].size() < 3)
+                continue; // invalid row
+            int id = stoi(crewData[i][0]);
+            string name = crewData[i][1];
+            string type = crewData[i][2];
+
+            Crew *c = nullptr;
+            if (type == "Pilot")
+            {
+                c = new Pilot(id, name);
+            }
+            else if (type == "Gunner")
+            {
+                c = new Gunner(id, name);
+            }
+            else if (type == "Torpedo Handler")
+            {
+                c = new TorpedoHandler(id, name);
+            }
+
+            if (c)
+            {
+                crewQueue.push(c);
+            }
+        }
+
+        vector<vector<string>> shipData = readCSV(ship);
+        vector<Ship *> *teamShips = (team == "Rogoatuskan") ? &RogoatuskanShip : &ZapezoidShip;
+
+        // Skip header (assuming first row is header)
+        for (size_t i = 1; i < shipData.size(); ++i)
+        {
+            if (shipData[i].size() < 3)
+                continue; // invalid row, at least id,name,type
+            int id = stoi(shipData[i][0]);
+            string name = shipData[i][1];
+            string type = shipData[i][2];
+
+            Ship *s = nullptr;
+            if (type == "Guerriero")
+            {
+                s = new Guerriero(id, name);
+            }
+            else if (type == "Medio")
+            {
+                s = new Medio(id, name);
+            }
+            else if (type == "Corazzata")
+            {
+                s = new Corazzata(id, name);
+            }
+            else if (type == "Jager")
+            {
+                s = new Jager(id, name);
+            }
+            else if (type == "Kreuzer")
+            {
+                s = new Kreuzer(id, name);
+            }
+            else if (type == "Fregatte")
+            {
+                s = new Fregatte(id, name);
+            }
+
+            if (s)
+            {
+                teamShips->push_back(s);
+            }
+        }
+
+        // Assign crews to ships (round-robin)
+        size_t shipIndex = 0;
+        while (!crewQueue.empty() && !teamShips->empty())
+        {
+            Crew *c = crewQueue.front();
+            crewQueue.pop();
+
+            Ship *s = (*teamShips)[shipIndex % teamShips->size()];
+            if (s->validAssignment(c))
+            {
+                s->insertCrew(c);
+            }
+            else
+            {
+                delete c; // Discard if cannot assign
+            }
+
+            shipIndex++;
+        }
     }
     catch (...)
     {
