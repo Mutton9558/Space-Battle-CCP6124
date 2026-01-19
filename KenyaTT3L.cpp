@@ -19,12 +19,12 @@ using namespace std;
 class Crew
 {
 protected:
-    int personID;
+    string personID;
     string personName;
     string personType;
 
 public:
-    Crew(int id, string name, string type)
+    Crew(string id, string name, string type)
     {
         personID = id;
         personName = name;
@@ -53,7 +53,7 @@ public:
 class Pilot : public Crew
 {
 public:
-    Pilot(int id, string name) : Crew(id, name, "Pilot") {}
+    Pilot(string id, string name) : Crew(id, name, "Pilot") {}
 
     // for incrementing counter for ship classes later
     int pilotContribution() const override { return 1; }
@@ -62,7 +62,7 @@ public:
 class Gunner : public Crew
 {
 public:
-    Gunner(int id, string name) : Crew(id, name, "Gunner") {}
+    Gunner(string id, string name) : Crew(id, name, "Gunner") {}
 
     int gunnerContribution() const override { return 1; }
 };
@@ -70,7 +70,7 @@ public:
 class TorpedoHandler : public Crew
 {
 public:
-    TorpedoHandler(int id, string name) : Crew(id, name, "Torpedo Handler") {}
+    TorpedoHandler(string id, string name) : Crew(id, name, "Torpedo Handler") {}
 
     int torpedoContribution() const override { return 1; }
 };
@@ -85,7 +85,8 @@ ostream &operator<<(ostream &text, const Crew &crew)
 class Ship
 {
 protected:
-    int hp, shipID;
+    int hp;
+    string shipID;
     map<string, int> crewType;
     map<string, int> maxCrewType;
     string shipName;
@@ -93,7 +94,7 @@ protected:
     float lightCannotHitChance, torpedoHitChance;
 
 public:
-    Ship(int hitpoint, int id, string name, int maxp, int maxg, int maxth, float LCHitChance, float THitChance)
+    Ship(int hitpoint, string id, string name, int maxp, int maxg, int maxth, float LCHitChance, float THitChance)
     {
         hp = hitpoint;
         shipID = id;
@@ -186,6 +187,14 @@ public:
         }
     }
 
+    void crewInfo() const
+    {
+        for (auto p : CrewMembers)
+        {
+            cout << *p << endl;
+        }
+    }
+
     virtual ~Ship()
     {
         int crewCount = CrewMembers.size();
@@ -204,7 +213,7 @@ protected:
     int lightCannonDamage;
 
 public:
-    Guerriero(int shipID, string name) : Ship(123, shipID, name, 1, 1, 0, 0.26, 0.06)
+    Guerriero(string shipID, string name) : Ship(123, shipID, name, 1, 1, 0, 0.26, 0.06)
     {
         lightCannonDamage = 96;
     }
@@ -221,7 +230,7 @@ protected:
     int lightCannonDamage;
 
 public:
-    Medio(int shipID, string name) : Ship(214, shipID, name, 1, 2, 0, 0.31, 0.11)
+    Medio(string shipID, string name) : Ship(214, shipID, name, 1, 2, 0, 0.31, 0.11)
     {
         lightCannonDamage = 134;
     }
@@ -239,7 +248,7 @@ protected:
     int torpedoDamage;
 
 public:
-    Corazzata(int shipID, string name) : Ship(1031, shipID, name, 2, 10, 4, 0.50, 0.25)
+    Corazzata(string shipID, string name) : Ship(1031, shipID, name, 2, 10, 4, 0.50, 0.25)
     {
         lightCannonDamage = 164;
         torpedoDamage = 293;
@@ -262,7 +271,7 @@ protected:
     int lightCannonDamage;
 
 public:
-    Jager(int shipID, string name) : Ship(112, shipID, name, 1, 1, 0, 0.24, 0.05)
+    Jager(string shipID, string name) : Ship(112, shipID, name, 1, 1, 0, 0.24, 0.05)
     {
         lightCannonDamage = 101;
     }
@@ -279,7 +288,7 @@ protected:
     int lightCannonDamage;
 
 public:
-    Kreuzer(int shipID, string name) : Ship(212, shipID, name, 1, 2, 0, 0.29, 0.10)
+    Kreuzer(string shipID, string name) : Ship(212, shipID, name, 1, 2, 0, 0.29, 0.10)
     {
         lightCannonDamage = 132;
     }
@@ -297,7 +306,7 @@ protected:
     int torpedoDamage;
 
 public:
-    Fregatte(int shipID, string name) : Ship(1143, shipID, name, 2, 11, 5, 0.60, 0.30)
+    Fregatte(string shipID, string name) : Ship(1143, shipID, name, 2, 11, 5, 0.60, 0.30)
     {
         lightCannonDamage = 159;
         torpedoDamage = 282;
@@ -316,10 +325,6 @@ public:
 
 vector<Ship *> RogoatuskanShip;
 vector<Ship *> ZapezoidShip;
-// can use this to polymorphically assign crews to ships
-// for example, Rogoatuskan[p->returnType() % Rogoatuskan.size()-1]->insertCrew(p);
-map<string, int> personTypeCount;
-
 vector<vector<string>> readCSV(const string &filename)
 {
     vector<vector<string>> data;
@@ -334,7 +339,10 @@ vector<vector<string>> readCSV(const string &filename)
 
         while (getline(ss, cell, ','))
         {
-            row.push_back(cell);
+            if (cell != "ID" && cell != "Name" && cell != "Type")
+            {
+                row.push_back(cell);
+            }
         }
 
         data.push_back(row);
@@ -343,14 +351,12 @@ vector<vector<string>> readCSV(const string &filename)
     return data;
 }
 
-void shipAssignment(const char *crew, const char *ship, const string team)
+void shipAssignment(string crew, string ship, const string team)
 {
     queue<Crew *> crewQueue;
-    int pilotIndex, gunnerIndex, torpedoHandlerIndex = 0;
+    map<string, int> personTypeCount;
     try
     {
-        fstream crewCSV(crew);
-        fstream shipCSV(ship);
         vector<vector<string>> crewData = readCSV(crew);
 
         // Skip header if present (assuming first row is header)
@@ -358,7 +364,7 @@ void shipAssignment(const char *crew, const char *ship, const string team)
         {
             if (crewData[i].size() < 3)
                 continue; // invalid row
-            int id = stoi(crewData[i][0]);
+            string id = crewData[i][0];
             string name = crewData[i][1];
             string type = crewData[i][2];
 
@@ -390,9 +396,9 @@ void shipAssignment(const char *crew, const char *ship, const string team)
         {
             if (shipData[i].size() < 3)
                 continue; // invalid row, at least id,name,type
-            int id = stoi(shipData[i][0]);
-            string name = shipData[i][1];
-            string type = shipData[i][2];
+            string id = shipData[i][0];
+            string name = shipData[i][2];
+            string type = shipData[i][1];
 
             Ship *s = nullptr;
             if (type == "Guerriero")
@@ -433,17 +439,37 @@ void shipAssignment(const char *crew, const char *ship, const string team)
             Crew *c = crewQueue.front();
             crewQueue.pop();
 
-            Ship *s = (*teamShips)[shipIndex % teamShips->size()];
-            if (s->validAssignment(c))
+            if (personTypeCount[c->returnType()])
             {
-                s->insertCrew(c);
+                shipIndex = personTypeCount[c->returnType()];
+                personTypeCount[c->returnType()]++;
             }
             else
             {
-                delete c; // Discard if cannot assign
+                personTypeCount[c->returnType()] = 1;
+                shipIndex = 0;
             }
 
-            shipIndex++;
+            Ship *s = (*teamShips)[shipIndex % teamShips->size()];
+            while (shipIndex < teamShips->size())
+            {
+
+                if (s->validAssignment(c))
+                {
+                    s->insertCrew(c);
+                    shipIndex = 0;
+                    break;
+                }
+                else
+                {
+                    shipIndex++;
+                }
+
+                if (shipIndex == teamShips->size())
+                {
+                    delete (c);
+                }
+            }
         }
     }
     catch (...)
@@ -460,16 +486,79 @@ int main(const int argc, const char *argv[])
     if (argc != 5)
     {
         cout << "Please enter the ship.csv and crew.csv for Zapezoid and Rogoatuskan!" << endl;
+        return 1;
     }
 
     int count = 1;
+    bool zChecked = false;
+    bool rChecked = false;
     while (count < argc)
     {
+        bool isShip = false;
         // ill change this later fr lazy rn
         string team = (argv[count][0] == 'r' ? "Rogoatuskan" : "Zapezoid");
+        if (team == "Zapezoid")
+        {
+            if (zChecked == true)
+            {
+                count++;
+                continue;
+            }
+            zChecked = true;
+        }
+        else if (team == "Rogoatuskan")
+        {
+            if (rChecked == true)
+            {
+                count++;
+                continue;
+            }
+            rChecked = true;
+        }
+        else
+        {
+            cout << "Invalid team" << endl;
+            exit(0);
+        }
+        if (static_cast<string>(argv[count]).find("Ship") != string::npos)
+        {
+            isShip = true;
+        }
+        string shipFile = static_cast<string>(argv[count]);
+        string crewFile;
+        for (int i = 1; i < argc; i++)
+        {
+            if (argv[i][0] == argv[count][0])
+            {
+                string arg = argv[i];
+
+                if (isShip && arg.find("Crew") != string::npos)
+                {
+                    crewFile = arg;
+                }
+                else if (!isShip && arg.find("Ship") != string::npos)
+                {
+                    shipFile = arg;
+                }
+            }
+        }
+
         // XyloTT9L zShips1.csv zCrew1.csv rShips1.csv rCrew1.csv <- format of call
-        shipAssignment(argv[count + 1], argv[count], team);
-        count = count + 2;
+        shipAssignment(crewFile, shipFile, team);
+        count++;
     }
-    cout << "Hello World" << endl;
+    // test
+    cout << "Zapezoid" << endl;
+    for (auto zS : ZapezoidShip)
+    {
+
+        zS->crewInfo();
+    }
+
+    cout << "Rogoatuskan" << endl;
+    for (auto rS : RogoatuskanShip)
+    {
+
+        rS->crewInfo();
+    }
 }
