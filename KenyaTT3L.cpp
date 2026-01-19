@@ -14,8 +14,11 @@
 #include <ctime>
 #include <string>
 #include <algorithm>
+#include <unistd.h>
 
 using namespace std;
+
+class Ship;
 
 class Crew
 {
@@ -48,6 +51,8 @@ public:
         return personType;
     }
 
+    virtual bool attack(Ship &from, Ship &target) const = 0;
+
     virtual ~Crew() {}
 };
 
@@ -58,6 +63,11 @@ public:
 
     // for incrementing counter for ship classes later
     int pilotContribution() const override { return 1; }
+
+    bool attack(Ship &, Ship &) const override
+    {
+        return false;
+    }
 };
 
 class Gunner : public Crew
@@ -66,6 +76,8 @@ public:
     Gunner(string id, string name) : Crew(id, name, "Gunner") {}
 
     int gunnerContribution() const override { return 1; }
+
+    bool attack(Ship &from, Ship &target) const override;
 };
 
 class TorpedoHandler : public Crew
@@ -74,6 +86,8 @@ public:
     TorpedoHandler(string id, string name) : Crew(id, name, "Torpedo Handler") {}
 
     int torpedoContribution() const override { return 1; }
+
+    bool attack(Ship &from, Ship &target) const override;
 };
 
 ostream &operator<<(ostream &text, const Crew &crew)
@@ -88,6 +102,7 @@ class Ship
 protected:
     int hp;
     string shipID;
+    string shipType;
     map<string, int> crewType;
     map<string, int> maxCrewType;
     string shipName;
@@ -95,8 +110,8 @@ protected:
     float lightHitChance, torpedoHitChance;
 
 public:
-    Ship(int hitpoint, int id, string name, int maxP, int maxG, int maxT, float LCH, float TH)
-        : hp(hitpoint), shipID(id), shipName(name),
+    Ship(int hitpoint, string id, string name, string type, int maxP, int maxG, int maxT, float LCH, float TH)
+        : hp(hitpoint), shipID(id), shipName(name), shipType(type),
           lightHitChance(LCH), torpedoHitChance(TH)
     {
         maxCrewType["Pilot"] = maxP;
@@ -112,18 +127,21 @@ public:
     float getLightHitChance() const { return lightHitChance * 100; }
     float getTorpedoHitChance() const { return torpedoHitChance * 100; }
 
-    void isHit(string attackType, int damage)
+    bool isHit(string attackType, int damage)
     {
-        int hitChance = (((maxCrewType["Pilot"] - crewType["Pilot"]) * 0.25 + 1) * (attackType == "Light Cannon" ? lightHitChance : torpedoHitChance)) * 1000;
+        int hitChance = ((((maxCrewType["Pilot"] - crewType["Pilot"]) * 0.25) + 1) * (attackType == "Light Cannon" ? lightHitChance : torpedoHitChance)) * 1000;
+        int randomNum = rand() % 1000;
         // for example if hit == 490 and hit chance was 550, it hits.
         // easier to illustrate with graph but essentially
         // 0 ------  50 ------ 100
         // P(X <= hit chance) is the probability it will hit
-        bool hit = rand() % 1000 <= hitChance;
+        bool hit = (randomNum <= hitChance);
         if (hit)
         {
             hp -= damage;
         }
+
+        return hit;
     };
 
     // implement do while to check if crew can be assigned here
@@ -179,7 +197,7 @@ public:
     {
         try
         {
-            return maxCrewType.at("Torpedo Handlers");
+            return maxCrewType.at("Torpedo Handler");
         }
         catch (std::out_of_range)
         {
@@ -194,6 +212,11 @@ public:
         {
             cout << *p << endl;
         }
+    }
+
+    string returnType() const
+    {
+        return shipType;
     }
 
     virtual ~Ship()
@@ -214,7 +237,7 @@ protected:
     int lightCannonDamage;
 
 public:
-    Guerriero(string shipID, string name) : Ship(123, shipID, name, 1, 1, 0, 0.26, 0.06)
+    Guerriero(string shipID, string name) : Ship(123, shipID, name, "Zapezoid", 1, 1, 0, 0.26, 0.06)
     {
         lightCannonDamage = 96;
     }
@@ -231,7 +254,7 @@ protected:
     int lightCannonDamage;
 
 public:
-    Medio(string shipID, string name) : Ship(214, shipID, name, 1, 2, 0, 0.31, 0.11)
+    Medio(string shipID, string name) : Ship(214, shipID, name, "Zapezoid", 1, 2, 0, 0.31, 0.11)
     {
         lightCannonDamage = 134;
     }
@@ -249,7 +272,7 @@ protected:
     int torpedoDamage;
 
 public:
-    Corazzata(string shipID, string name) : Ship(1031, shipID, name, 2, 10, 4, 0.50, 0.25)
+    Corazzata(string shipID, string name) : Ship(1031, shipID, name, "Zapezoid", 2, 10, 4, 0.50, 0.25)
     {
         lightCannonDamage = 164;
         torpedoDamage = 293;
@@ -272,7 +295,7 @@ protected:
     int lightCannonDamage;
 
 public:
-    Jager(string shipID, string name) : Ship(112, shipID, name, 1, 1, 0, 0.24, 0.05)
+    Jager(string shipID, string name) : Ship(112, shipID, name, "Rogoatuskan", 1, 1, 0, 0.24, 0.05)
     {
         lightCannonDamage = 101;
     }
@@ -289,7 +312,7 @@ protected:
     int lightCannonDamage;
 
 public:
-    Kreuzer(string shipID, string name) : Ship(212, shipID, name, 1, 2, 0, 0.29, 0.10)
+    Kreuzer(string shipID, string name) : Ship(212, shipID, name, "Rogoatuskan", 1, 2, 0, 0.29, 0.10)
     {
         lightCannonDamage = 132;
     }
@@ -307,7 +330,7 @@ protected:
     int torpedoDamage;
 
 public:
-    Fregatte(string shipID, string name) : Ship(1143, shipID, name, 2, 11, 5, 0.60, 0.30)
+    Fregatte(string shipID, string name) : Ship(1143, shipID, name, "Rogoatuskan", 2, 11, 5, 0.60, 0.30)
     {
         lightCannonDamage = 159;
         torpedoDamage = 282;
@@ -323,6 +346,20 @@ public:
         return torpedoDamage;
     }
 };
+
+bool Gunner::attack(Ship &from, Ship &target) const
+{
+    bool hit = target.isHit("Light Cannon", from.returnLightCannonDamage());
+    cout << "Gunner on " << from.returnName() << " fires Light Cannon at " << target.returnName() << "... " << (hit ? "HIT!" : "MISS!");
+    return hit;
+}
+
+bool TorpedoHandler::attack(Ship &from, Ship &target) const
+{
+    bool hit = target.isHit("Torpedo", from.returnTorpedoDamage());
+    cout << "Torpedo Handler on " << from.returnName() << "(" << from.returnType() << ")" << " fires Torpedo at " << target.returnName() << "(" << target.returnType() << ")" << "... " << (hit ? "HIT!" : "MISS!");
+    return hit;
+}
 
 vector<Ship *> RogoatuskanShip;
 vector<Ship *> ZapezoidShip;
@@ -340,10 +377,7 @@ vector<vector<string>> readCSV(const string &filename)
 
         while (getline(ss, cell, ','))
         {
-            if (cell != "ID" && cell != "Name" && cell != "Type")
-            {
-                row.push_back(cell);
-            }
+            row.push_back(cell);
         }
 
         data.push_back(row);
@@ -360,8 +394,7 @@ void shipAssignment(string crew, string ship, const string team)
     {
         vector<vector<string>> crewData = readCSV(crew);
 
-        // Skip header if present (assuming first row is header)
-        for (size_t i = 1; i < crewData.size(); ++i)
+        for (size_t i = 0; i < crewData.size(); ++i)
         {
             if (crewData[i].size() < 3)
                 continue; // invalid row
@@ -378,7 +411,7 @@ void shipAssignment(string crew, string ship, const string team)
             {
                 c = new Gunner(id, name);
             }
-            else if (type == "Torpedo Handler")
+            else if (type == "Torpedo Handler" || type == "TorpedoHandler")
             {
                 c = new TorpedoHandler(id, name);
             }
@@ -392,8 +425,7 @@ void shipAssignment(string crew, string ship, const string team)
         vector<vector<string>> shipData = readCSV(ship);
         vector<Ship *> *teamShips = (team == "Rogoatuskan") ? &RogoatuskanShip : &ZapezoidShip;
 
-        // Skip header (assuming first row is header)
-        for (size_t i = 1; i < shipData.size(); ++i)
+        for (size_t i = 0; i < shipData.size(); ++i)
         {
             if (shipData[i].size() < 3)
                 continue; // invalid row, at least id,name,type
@@ -433,10 +465,6 @@ void shipAssignment(string crew, string ship, const string team)
             }
         }
 
-        sort(teamShips->begin(), teamShips->end(),
-             [](Ship *a, Ship *b)
-             { return a->returnHP() > b->returnHP(); });
-
         // Assign crews to ships (round-robin)
         size_t shipIndex = 0;
         while (!crewQueue.empty() && !teamShips->empty())
@@ -444,21 +472,11 @@ void shipAssignment(string crew, string ship, const string team)
             Crew *c = crewQueue.front();
             crewQueue.pop();
 
-            if (personTypeCount[c->returnType()])
-            {
-                shipIndex = personTypeCount[c->returnType()];
-                personTypeCount[c->returnType()]++;
-            }
+            shipIndex = personTypeCount[c->returnType()]++;
 
-            if (!assigned)
-            {
-                personTypeCount[c->returnType()] = 1;
-                shipIndex = 0;
-            }
-
-            Ship *s = (*teamShips)[shipIndex % teamShips->size()];
             while (shipIndex < teamShips->size())
             {
+                Ship *s = (*teamShips)[shipIndex % teamShips->size()];
 
                 if (s->validAssignment(c))
                 {
@@ -485,10 +503,10 @@ void shipAssignment(string crew, string ship, const string team)
 }
 
 // battle function
-bool attackHits(float chancePercent)
-{
-    return (rand() % 100) < chancePercent;
-}
+// bool attackHits(float chancePercent)
+// {
+//     return (rand() % 100) < chancePercent;
+// }
 
 Ship *pickTarget(vector<Ship *> &fleet)
 {
@@ -514,28 +532,8 @@ void simulateRound(vector<Ship *> &fleetA, vector<Ship *> &fleetB)
                 Ship *target = pickTarget(defender);
                 if (!target)
                     continue;
-                int dmg = 0;
-                float chance = 0;
-                string weapon;
-                if (c->returnType() == "Gunner")
-                {
-                    dmg = s->returnLightCannonDamage();
-                    chance = s->getLightHitChance();
-                    weapon = "Light Cannon";
-                }
-                else if (c->returnType() == "Torpedo Handler")
-                {
-                    dmg = s->returnTorpedoDamage();
-                    chance = s->getTorpedoHitChance();
-                    weapon = "Torpedo";
-                }
-                else
-                    continue;
-                bool hit = attackHits(chance);
-                if (hit)
-                    target->isHit(weapon, dmg);
-                cout << c->returnType() << " on " << s->returnName() << " fires " << weapon
-                     << " at " << target->returnName() << "... " << (hit ? "HIT!" : "MISS!");
+                bool hit = c->attack(*s, *target);
+
                 if (hit)
                     cout << " Remaining HP: " << target->returnHP() << (target->returnHP() <= 0 ? " (DESTROYED)" : "");
                 cout << endl;
@@ -583,17 +581,18 @@ void simulateBattle(vector<Ship *> &fleetA, vector<Ship *> &fleetB, const string
 int main(const int argc, const char *argv[])
 {
     srand(time(0));
-
+    // argc also includes calling the process
     if (argc != 5)
     {
         cout << "Please enter the ship.csv and crew.csv for Zapezoid and Rogoatuskan!" << endl;
         return 1;
     }
 
-    // Assign crews to ships for both teams
     int count = 1;
     bool zChecked = false;
     bool rChecked = false;
+    string shipFile;
+    string crewFile;
     while (count < argc)
     {
         bool isShip = false;
@@ -625,11 +624,17 @@ int main(const int argc, const char *argv[])
         if (static_cast<string>(argv[count]).find("Ship") != string::npos)
         {
             isShip = true;
+            shipFile = static_cast<string>(argv[count]);
         }
-        string shipFile = static_cast<string>(argv[count]);
-        string crewFile;
+        else
+        {
+            crewFile = static_cast<string>(argv[count]);
+        }
+
         for (int i = 1; i < argc; i++)
         {
+            if (i == count)
+                continue;
             if (argv[i][0] == argv[count][0])
             {
                 string arg = argv[i];
@@ -637,10 +642,12 @@ int main(const int argc, const char *argv[])
                 if (isShip && arg.find("Crew") != string::npos)
                 {
                     crewFile = arg;
+                    break;
                 }
                 else if (!isShip && arg.find("Ship") != string::npos)
                 {
                     shipFile = arg;
+                    break;
                 }
             }
         }
@@ -649,6 +656,21 @@ int main(const int argc, const char *argv[])
         shipAssignment(crewFile, shipFile, team);
         count++;
     }
+    // test
+    // cout << "Zapezoid" << endl;
+    // for (auto zS : ZapezoidShip)
+    // {
+
+    //     zS->crewInfo();
+    // }
+
+    // cout << "Rogoatuskan" << endl;
+    // for (auto rS : RogoatuskanShip)
+    // {
+
+    //     rS->crewInfo();
+    // }
+
     cout << "=== CREW ASSIGNMENT ===\n\n";
 
     // Lambda to print a team
@@ -677,6 +699,18 @@ int main(const int argc, const char *argv[])
     // Start the battle
     cout << "=== BATTLE START ===\n\n";
     simulateBattle(RogoatuskanShip, ZapezoidShip, "Rogoatuskan", "Zapezoid");
+
+    for (auto p : RogoatuskanShip)
+    {
+        delete p;
+        p = nullptr;
+    }
+
+    for (auto p : ZapezoidShip)
+    {
+        delete p;
+        p = nullptr;
+    }
 
     return 0;
 }
