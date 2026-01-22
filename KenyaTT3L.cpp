@@ -13,6 +13,7 @@
 #include <sstream>
 #include <ctime>
 #include <string>
+#include <cmath>
 
 using namespace std;
 
@@ -125,7 +126,9 @@ public:
 
     bool isHit(string attackType, int damage)
     {
-        int hitChance = ((((maxCrewType["Pilot"] - crewType["Pilot"]) * 0.25) + 1) * (attackType == "Light Cannon" ? lightHitChance : torpedoHitChance)) * 1000;
+        float dodgeMissMultiplier = (maxCrewType["Pilot"] - crewType["Pilot"]) * 0.25 + 1;
+        int weaponHitChance = (attackType == "Light Cannon" ? lightHitChance : torpedoHitChance) * 1000;
+        int hitChance = round(dodgeMissMultiplier * weaponHitChance);
         int randomNum = rand() % 1000;
         // for example if hit == 490 and hit chance was 550, it hits.
         // easier to illustrate with graph but essentially
@@ -199,14 +202,6 @@ public:
         {
             cout << "No Torpedo Handlers" << endl;
             return -1;
-        }
-    }
-
-    void crewInfo() const
-    {
-        for (auto p : CrewMembers)
-        {
-            cout << *p << endl;
         }
     }
 
