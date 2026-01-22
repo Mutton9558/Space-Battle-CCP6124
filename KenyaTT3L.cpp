@@ -122,8 +122,6 @@ public:
 
     virtual int returnLightCannonDamage() const = 0;
     virtual int returnTorpedoDamage() const { return 0; }
-    float getLightHitChance() const { return lightHitChance * 100; }
-    float getTorpedoHitChance() const { return torpedoHitChance * 100; }
 
     bool isHit(string attackType, int damage)
     {
