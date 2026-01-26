@@ -585,24 +585,6 @@ void printFleetStatus(vector<Ship *> &fleet, const string &teamName)
     }
 }
 
-void printFleetStatus(const vector<Ship *> &fleet, const string &teamName)
-{
-    for (const auto &ship : fleet)
-    {
-        cout << teamName << " - "
-             << ship->returnName()
-             << "ID: " << ship->returnID() << ", "
-             << ship->returnName() << " (" << ship->returnType() << "): ";
-
-        if (ship->returnHP() > 0)
-            cout << ship->returnHP() << " HP";
-        else
-            cout << "DESTROYED";
-
-        cout << endl;
-    }
-}
-
 void simulateBattle(vector<Ship *> &fleetA, vector<Ship *> &fleetB, const string &nameA, const string &nameB)
 {
     int round = 1;
