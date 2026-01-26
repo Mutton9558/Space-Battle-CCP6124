@@ -123,6 +123,8 @@ public:
 
     virtual int returnLightCannonDamage() const = 0;
     virtual int returnTorpedoDamage() const { return 0; }
+    float getLightHitChance() const { return lightHitChance * 100; }
+    float getTorpedoHitChance() const { return torpedoHitChance * 100; }
 
     bool isHit(string attackType, int damage)
     {
@@ -582,6 +584,24 @@ void printFleetStatus(vector<Ship *> &fleet, const string &teamName)
         }
         cout << endl;
         fleet = aliveShip;
+    }
+}
+
+void printFleetStatus(const vector<Ship *> &fleet, const string &teamName)
+{
+    for (const auto &ship : fleet)
+    {
+        cout << teamName << " - "
+             << ship->returnName()
+             << "ID: " << ship->returnID() << ", "
+             << ship->returnName() << " (" << ship->returnType() << "): ";
+
+        if (ship->returnHP() > 0)
+            cout << ship->returnHP() << " HP";
+        else
+            cout << "DESTROYED";
+
+        cout << endl;
     }
 }
 
