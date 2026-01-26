@@ -581,8 +581,8 @@ void printFleetStatus(vector<Ship *> &fleet, const string &teamName)
             delete (ship);
         }
         cout << endl;
-        fleet = aliveShip;
     }
+    fleet = aliveShip;
 }
 
 void simulateBattle(vector<Ship *> &fleetA, vector<Ship *> &fleetB, const string &nameA, const string &nameB)
