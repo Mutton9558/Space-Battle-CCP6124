@@ -13,6 +13,7 @@
 #include <sstream>
 #include <ctime>
 #include <string>
+#include <cmath>
 
 using namespace std;
 
@@ -127,7 +128,9 @@ public:
 
     bool isHit(string attackType, int damage)
     {
-        int hitChance = ((((maxCrewType["Pilot"] - crewType["Pilot"]) * 0.25) + 1) * (attackType == "Light Cannon" ? lightHitChance : torpedoHitChance)) * 1000;
+        float dodgeMissMultiplier = (maxCrewType["Pilot"] - crewType["Pilot"]) * 0.25 + 1;
+        int weaponHitChance = (attackType == "Light Cannon" ? lightHitChance : torpedoHitChance) * 1000;
+        int hitChance = round(dodgeMissMultiplier * weaponHitChance);
         int randomNum = rand() % 1000;
         // for example if hit == 490 and hit chance was 550, it hits.
         // easier to illustrate with graph but essentially
@@ -138,7 +141,7 @@ public:
         {
             hp -= damage;
             if (hp < 0)
-                hp = 0; // caps HP at 0
+                hp = 0;
         }
 
         return hit;
@@ -204,14 +207,6 @@ public:
         {
             cout << "No Torpedo Handlers" << endl;
             return -1;
-        }
-    }
-
-    void crewInfo() const
-    {
-        for (auto p : CrewMembers)
-        {
-            cout << *p << endl;
         }
     }
 
@@ -557,27 +552,6 @@ void simulateRound(vector<Ship *> &fleetA, vector<Ship *> &fleetB)
 
     fleetAttack(fleetA, fleetB);
     fleetAttack(fleetB, fleetA);
-
-    vector<Ship *> aliveFleetA;
-    vector<Ship *> aliveFleetB;
-    for (Ship *s : fleetA)
-    {
-        if (s->returnHP() > 0)
-        {
-            aliveFleetA.push_back(s);
-        }
-    }
-
-    for (Ship *s : fleetB)
-    {
-        if (s->returnHP() > 0)
-        {
-            aliveFleetB.push_back(s);
-        }
-    }
-
-    fleetA = aliveFleetA;
-    fleetB = aliveFleetB;
 }
 
 bool fleetDestroyed(vector<Ship *> &fleet)
@@ -586,6 +560,31 @@ bool fleetDestroyed(vector<Ship *> &fleet)
         if (s->returnHP() > 0)
             return false;
     return true;
+}
+
+void printFleetStatus(vector<Ship *> &fleet, const string &teamName)
+{
+    vector<Ship *> aliveShip;
+    for (const auto &ship : fleet)
+    {
+        cout << teamName << " - "
+             << ship->returnName()
+             << "ID: " << ship->returnID() << ", "
+             << ship->returnName() << " (" << ship->returnType() << "): ";
+
+        if (ship->returnHP() > 0)
+        {
+            cout << ship->returnHP() << " HP";
+            aliveShip.push_back(ship);
+        }
+        else
+        {
+            cout << "DESTROYED";
+            delete (ship);
+        }
+        cout << endl;
+        fleet = aliveShip;
+    }
 }
 
 void printFleetStatus(const vector<Ship *> &fleet, const string &teamName)
@@ -622,7 +621,9 @@ void simulateBattle(vector<Ship *> &fleetA, vector<Ship *> &fleetB, const string
         round++;
     }
     cout << "\n=== FINAL RESULT ===\n";
-    if (fleetDestroyed(fleetA))
+    if (fleetDestroyed(fleetA) && fleetDestroyed(fleetB))
+        cout << "*** TIE! ***\n";
+    else if (fleetDestroyed(fleetA))
         cout << "*** " << nameB << " WIN! ***\n";
     else
         cout << "*** " << nameA << " WIN! ***\n";
