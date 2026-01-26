@@ -123,8 +123,6 @@ public:
 
     virtual int returnLightCannonDamage() const = 0;
     virtual int returnTorpedoDamage() const { return 0; }
-    float getLightHitChance() const { return lightHitChance * 100; }
-    float getTorpedoHitChance() const { return torpedoHitChance * 100; }
 
     bool isHit(string attackType, int damage)
     {
@@ -141,7 +139,7 @@ public:
         {
             hp -= damage;
             if (hp < 0)
-                hp = 0; // caps HP at 0
+                hp = 0;
         }
 
         return hit;
@@ -552,27 +550,6 @@ void simulateRound(vector<Ship *> &fleetA, vector<Ship *> &fleetB)
 
     fleetAttack(fleetA, fleetB);
     fleetAttack(fleetB, fleetA);
-
-    vector<Ship *> aliveFleetA;
-    vector<Ship *> aliveFleetB;
-    for (Ship *s : fleetA)
-    {
-        if (s->returnHP() > 0)
-        {
-            aliveFleetA.push_back(s);
-        }
-    }
-
-    for (Ship *s : fleetB)
-    {
-        if (s->returnHP() > 0)
-        {
-            aliveFleetB.push_back(s);
-        }
-    }
-
-    fleetA = aliveFleetA;
-    fleetB = aliveFleetB;
 }
 
 bool fleetDestroyed(vector<Ship *> &fleet)
@@ -583,8 +560,9 @@ bool fleetDestroyed(vector<Ship *> &fleet)
     return true;
 }
 
-void printFleetStatus(const vector<Ship *> &fleet, const string &teamName)
+void printFleetStatus(vector<Ship *> &fleet, const string &teamName)
 {
+    vector<Ship *> aliveShip;
     for (const auto &ship : fleet)
     {
         cout << teamName << " - "
@@ -593,11 +571,17 @@ void printFleetStatus(const vector<Ship *> &fleet, const string &teamName)
              << ship->returnName() << " (" << ship->returnType() << "): ";
 
         if (ship->returnHP() > 0)
+        {
             cout << ship->returnHP() << " HP";
+            aliveShip.push_back(ship);
+        }
         else
+        {
             cout << "DESTROYED";
-
+            delete (ship);
+        }
         cout << endl;
+        fleet = aliveShip;
     }
 }
 
