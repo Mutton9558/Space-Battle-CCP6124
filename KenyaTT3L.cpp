@@ -471,7 +471,7 @@ void shipAssignment(string crew, string ship, const string team)
             }
         }
 
-        size_t shipIndex = 0;
+        int *shipIndex;
         while (!crewQueue.empty() && !teamShips->empty())
         {
             Crew *c = crewQueue.front();
@@ -480,14 +480,14 @@ void shipAssignment(string crew, string ship, const string team)
             /* To balance assignment, you can access the team ship vector by an index which is the count
                 of the type of Crew
             */
-            shipIndex = personTypeCount[c->returnType()]++;
+            shipIndex = &(personTypeCount[c->returnType()]);
             int shipVectorSize = teamShips->size();
-            int initialIndex = shipIndex % shipVectorSize;
+            int initialIndex = *shipIndex % shipVectorSize;
             bool isInitialSearch = true;
             bool isSearching = true;
             while (isSearching)
             {
-                Ship *s = (*teamShips)[shipIndex % shipVectorSize];
+                Ship *s = (*teamShips)[*shipIndex % shipVectorSize];
 
                 if (s->validAssignment(c))
                 {
@@ -496,9 +496,10 @@ void shipAssignment(string crew, string ship, const string team)
                 }
                 else
                 {
-                    shipIndex++;
+                    (*shipIndex)++;
+                    personTypeCount[c->returnType()]++;
                     // if the ship searching goes full circle, crew assignment not possible
-                    if (shipIndex % shipVectorSize == initialIndex && !isInitialSearch)
+                    if (*shipIndex % shipVectorSize == initialIndex && !isInitialSearch)
                     {
                         // Crew cannot be assigned
                         delete (c);
@@ -508,7 +509,9 @@ void shipAssignment(string crew, string ship, const string team)
                     isInitialSearch = false;
                 }
             }
+            (*shipIndex)++;
         }
+        shipIndex = nullptr;
     }
     catch (...)
     {
@@ -581,26 +584,8 @@ void printFleetStatus(vector<Ship *> &fleet, const string &teamName)
             delete (ship);
         }
         cout << endl;
-        fleet = aliveShip;
     }
-}
-
-void printFleetStatus(const vector<Ship *> &fleet, const string &teamName)
-{
-    for (const auto &ship : fleet)
-    {
-        cout << teamName << " - "
-             << ship->returnName()
-             << "ID: " << ship->returnID() << ", "
-             << ship->returnName() << " (" << ship->returnType() << "): ";
-
-        if (ship->returnHP() > 0)
-            cout << ship->returnHP() << " HP";
-        else
-            cout << "DESTROYED";
-
-        cout << endl;
-    }
+    fleet = aliveShip;
 }
 
 void simulateBattle(vector<Ship *> &fleetA, vector<Ship *> &fleetB, const string &nameA, const string &nameB)
@@ -629,10 +614,10 @@ void simulateBattle(vector<Ship *> &fleetA, vector<Ship *> &fleetB, const string
     cout << "\nSurviving ships:\n";
     for (auto s : fleetA)
         if (s->returnHP() > 0)
-            cout << nameA << " - " << s->returnName() << ": " << s->returnHP() << " HP\n";
+            cout << nameA << " - " << s->returnName() << ": " << s->returnHP() << " HP" << endl;
     for (auto s : fleetB)
         if (s->returnHP() > 0)
-            cout << nameB << " - " << s->returnName() << ": " << s->returnHP() << " HP\n";
+            cout << nameB << " - " << s->returnName() << ": " << s->returnHP() << " HP" << endl;
 }
 
 // argc is argument count, argv is the argument variables
@@ -739,7 +724,8 @@ int main(const int argc, const char *argv[])
                 if (i != crewList.size() - 1)
                     cout << "; ";
             }
-            cout << "\n\n";
+            cout << endl
+                 << endl;
         }
     };
 
