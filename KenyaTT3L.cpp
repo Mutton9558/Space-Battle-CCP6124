@@ -601,7 +601,9 @@ void simulateBattle(vector<Ship *> &fleetA, vector<Ship *> &fleetB, const string
         round++;
     }
     cout << "\n=== FINAL RESULT ===\n";
-    if (fleetDestroyed(fleetA))
+    if (fleetDestroyed(fleetA) && fleetDestroyed(fleetB))
+        cout << "*** TIE! ***\n";
+    else if (fleetDestroyed(fleetA))
         cout << "*** " << nameB << " WIN! ***\n";
     else
         cout << "*** " << nameA << " WIN! ***\n";
