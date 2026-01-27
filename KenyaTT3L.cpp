@@ -584,7 +584,14 @@ void printFleetStatus(vector<Ship *> &fleet, const string &teamName)
         }
         else
         {
-            cout << "DESTROYED";
+            if (ship->returnHP() > 0 && ship->getCrew().size() == 0)
+            {
+                cout << "SHIP HAS NO CREW, REMOVED FROM SIMULATION!";
+            }
+            else
+            {
+                cout << "DESTROYED";
+            }
             delete (ship);
         }
         cout << endl;
