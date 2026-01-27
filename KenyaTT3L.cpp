@@ -145,6 +145,11 @@ public:
         return hit;
     };
 
+    string returnType() const
+    {
+        return shipType;
+    }
+
     // implement do while to check if crew can be assigned here
     bool validAssignment(Crew *c)
     {
@@ -206,11 +211,6 @@ public:
             cout << "No Torpedo Handlers" << endl;
             return -1;
         }
-    }
-
-    string returnType() const
-    {
-        return shipType;
     }
 
     virtual ~Ship()
@@ -344,14 +344,20 @@ public:
 bool Gunner::attack(Ship &from, Ship &target) const
 {
     bool hit = target.isHit("Light Cannon", from.returnLightCannonDamage());
-    cout << "Gunner on " << from.returnName() << "(" << from.returnType() << ")" << " fires Light Cannon at " << target.returnName() << "(" << target.returnType() << ")" << "... " << (hit ? "HIT!" : "MISS!");
+    cout << "Gunner on " << from.returnName()
+         << "(" << from.returnType()
+         << ")" << " fires Light Cannon at " << target.returnName() << "("
+         << target.returnType() << ")" << "... " << (hit ? "HIT!" : "MISS!");
     return hit;
 }
 
 bool TorpedoHandler::attack(Ship &from, Ship &target) const
 {
     bool hit = target.isHit("Torpedo", from.returnTorpedoDamage());
-    cout << "Torpedo Handler on " << from.returnName() << "(" << from.returnType() << ")" << " fires Torpedo at " << target.returnName() << "(" << target.returnType() << ")" << "... " << (hit ? "HIT!" : "MISS!");
+    cout << "Torpedo Handler on " << from.returnName()
+         << "(" << from.returnType()
+         << ")" << " fires Torpedo at " << target.returnName() << "("
+         << target.returnType() << ")" << "... " << (hit ? "HIT!" : "MISS!");
     return hit;
 }
 
@@ -497,7 +503,6 @@ void shipAssignment(string crew, string ship, const string team)
                 else
                 {
                     (*shipIndex)++;
-                    personTypeCount[c->returnType()]++;
                     // if the ship searching goes full circle, crew assignment not possible
                     if (*shipIndex % shipVectorSize == initialIndex && !isInitialSearch)
                     {
@@ -523,7 +528,7 @@ Ship *pickTarget(vector<Ship *> &fleet)
 {
     vector<Ship *> alive;
     for (Ship *s : fleet)
-        if (s->returnHP() > 0)
+        if (s->returnHP() > 0 && s->getCrew().size() > 0)
             alive.push_back(s);
 
     if (alive.empty())
@@ -558,7 +563,7 @@ void simulateRound(vector<Ship *> &fleetA, vector<Ship *> &fleetB)
 bool fleetDestroyed(vector<Ship *> &fleet)
 {
     for (auto s : fleet)
-        if (s->returnHP() > 0)
+        if (s->returnHP() > 0 && s->getCrew().size() > 0)
             return false;
     return true;
 }
@@ -569,11 +574,10 @@ void printFleetStatus(vector<Ship *> &fleet, const string &teamName)
     for (const auto &ship : fleet)
     {
         cout << teamName << " - "
-             << ship->returnName()
              << "ID: " << ship->returnID() << ", "
              << ship->returnName() << " (" << ship->returnType() << "): ";
 
-        if (ship->returnHP() > 0)
+        if (ship->returnHP() > 0 && ship->getCrew().size() > 0)
         {
             cout << ship->returnHP() << " HP";
             aliveShip.push_back(ship);
