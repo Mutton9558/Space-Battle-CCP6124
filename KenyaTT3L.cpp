@@ -63,10 +63,7 @@ public:
     // for incrementing counter for ship classes later
     int pilotContribution() const override { return 1; }
 
-    bool attack(Ship &, Ship &) const override
-    {
-        return false;
-    }
+    bool attack(Ship &, Ship &) const override;
 };
 
 class Gunner : public Crew
@@ -121,6 +118,7 @@ public:
         crewType["Torpedo Handler"] = 0;
     }
 
+    virtual bool returnPilotCanFight() const { return false; }
     virtual int returnLightCannonDamage() const = 0;
     virtual int returnTorpedoDamage() const { return 0; }
 
@@ -231,7 +229,7 @@ protected:
     int lightCannonDamage;
 
 public:
-    Guerriero(string shipID, string name) : Ship(123, shipID, name, "Guerriero", 1, 1, 0, 0.26, 0.06)
+    Guerriero(string shipID, string name) : Ship(123, shipID, name, "Guerriero", 1, 0, 0, 0.26, 0.06)
     {
         lightCannonDamage = 96;
     }
@@ -240,6 +238,8 @@ public:
     {
         return lightCannonDamage;
     }
+
+    bool returnPilotCanFight() const override { return true; }
 };
 
 class Medio : public Ship
@@ -289,7 +289,7 @@ protected:
     int lightCannonDamage;
 
 public:
-    Jager(string shipID, string name) : Ship(112, shipID, name, "Jager", 1, 1, 0, 0.24, 0.05)
+    Jager(string shipID, string name) : Ship(112, shipID, name, "Jager", 1, 0, 0, 0.24, 0.05)
     {
         lightCannonDamage = 101;
     }
@@ -298,6 +298,8 @@ public:
     {
         return lightCannonDamage;
     }
+
+    bool returnPilotCanFight() const override { return true; }
 };
 
 class Kreuzer : public Ship
@@ -340,6 +342,23 @@ public:
         return torpedoDamage;
     }
 };
+
+bool Pilot::attack(Ship &from, Ship &target) const
+{
+    if (from.returnPilotCanFight())
+    {
+        bool hit = target.isHit("Light Cannon", from.returnLightCannonDamage());
+        cout << from.returnName()
+             << "(" << from.returnType()
+             << ")" << " autofires Light Cannon at " << target.returnName() << "("
+             << target.returnType() << ")" << "... " << (hit ? "HIT!" : "MISS!");
+        return hit;
+    }
+    else
+    {
+        return false;
+    }
+}
 
 bool Gunner::attack(Ship &from, Ship &target) const
 {
