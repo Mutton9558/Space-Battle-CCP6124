@@ -719,7 +719,8 @@ int main(const int argc, const char *argv[])
     // Lambda to print a team
     auto printTeam = [](const string &teamName, const vector<Ship *> &ships)
     {
-        cout << "Team: " << teamName << endl;
+        cout << "=== TEAM: " << teamName << " ===" << endl
+             << endl;
         for (Ship *s : ships)
         {
             cout << "Ship ID: " << s->returnID()
